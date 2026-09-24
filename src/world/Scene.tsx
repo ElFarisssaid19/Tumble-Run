@@ -1,6 +1,7 @@
 import { Physics } from '@react-three/rapier';
 import { useEffect, useRef } from 'react';
 import type { Mesh } from 'three';
+import { useGame } from '../hooks/useGame';
 import { Course } from './Course';
 import { FollowCamera } from './FollowCamera';
 import { Lights } from './Lights';
@@ -11,6 +12,7 @@ import { Scenery } from './Scenery';
 /** Everything inside the canvas. `onReady` fires once physics has loaded and the world is up. */
 export function Scene({ onReady }: { onReady?: () => void }) {
   const marble = useRef<Mesh>(null);
+  const courseLength = useGame((state) => state.course.length);
 
   useEffect(() => onReady?.(), [onReady]);
 
@@ -26,7 +28,7 @@ export function Scene({ onReady }: { onReady?: () => void }) {
 
       <Lights target={marble} />
       <FollowCamera target={marble} />
-      <Scenery />
+      <Scenery length={courseLength} />
     </>
   );
 }

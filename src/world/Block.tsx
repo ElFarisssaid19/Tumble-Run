@@ -15,6 +15,8 @@ import {
 } from 'three';
 import { BLOCK_SIZE } from '../game/config';
 import { gameStore } from '../game/store';
+import { useGame } from '../hooks/useGame';
+import { Flag } from './Flag';
 import {
   END_WALL_HEIGHT,
   FINISH_LINE_OFFSET,
@@ -148,6 +150,42 @@ export function StartBlock({ z }: { z: number }) {
 /** Plain block that an obstacle sits on; tiles alternate between two tints. */
 export function ObstacleBlock({ z, index }: { z: number; index: number }) {
   return <Block z={z} material={index % 2 === 0 ? materials.tileA : materials.tileB} />;
+}
+
+/**
+ * Obstacle-free rest block with a flag. Rolling onto it makes it the respawn point; the flag
+ * runs up its pole once reached (the sound and HUD message come from the store change).
+ */
+export function CheckpointBlock({ z, id }: { z: number; id: number }) {
+  const reached = useGame((state) => state.checkpoint !== null && state.checkpoint >= id);
+
+  const onEnter = ({ other }: IntersectionEnterPayload) => {
+    if (other.rigidBodyObject?.name === MARBLE_NAME) {
+      gameStore.getState().reachCheckpoint(id);
+    }
+  };
+
+  return (
+    <Block z={z} material={materials.checkpoint}>
+      <mesh
+        geometry={lineGeometry}
+        material={lineMaterial}
+        position={[0, 0, HALF_BLOCK - 0.5]}
+        rotation-x={-Math.PI / 2}
+        receiveShadow
+      />
+      {/* Stands on the left wall, its pennant pointing over the track. */}
+      <Flag position={[-WALL_X, WALL_HEIGHT, 0]} raised={reached} />
+      <RigidBody type="fixed" colliders={false}>
+        <CuboidCollider
+          sensor
+          args={[HALF_BLOCK, 1.5, HALF_BLOCK]}
+          position={[0, 1.5, 0]}
+          onIntersectionEnter={onEnter}
+        />
+      </RigidBody>
+    </Block>
+  );
 }
 
 /** Last block: checkered finish line and the trophy. Crossing the line stops the clock. */

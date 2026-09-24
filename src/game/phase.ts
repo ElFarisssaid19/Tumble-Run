@@ -1,16 +1,19 @@
 /**
+ * menu    → the level select screen
  * ready   → the marble waits on the start block, clock at zero
  * playing → the clock runs (entered on the first input)
  * ended   → the trophy was reached, clock frozen
  */
-export type Phase = 'ready' | 'playing' | 'ended';
+export type Phase = 'menu' | 'ready' | 'playing' | 'ended';
 
-export type PhaseEvent = 'start' | 'finish' | 'restart';
+/** select: a level or Endless course was picked · quit: back to the level select screen. */
+export type PhaseEvent = 'select' | 'start' | 'finish' | 'restart' | 'quit';
 
 const TRANSITIONS: Record<Phase, Partial<Record<PhaseEvent, Phase>>> = {
-  ready: { start: 'playing', restart: 'ready' },
-  playing: { finish: 'ended', restart: 'ready' },
-  ended: { restart: 'ready' },
+  menu: { select: 'ready' },
+  ready: { start: 'playing', restart: 'ready', select: 'ready', quit: 'menu' },
+  playing: { finish: 'ended', restart: 'ready', select: 'ready', quit: 'menu' },
+  ended: { restart: 'ready', select: 'ready', quit: 'menu' },
 };
 
 /** The phase after `event`; events that make no sense in the current phase are ignored. */

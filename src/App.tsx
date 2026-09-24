@@ -2,10 +2,12 @@ import { PerformanceMonitor } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { Suspense, useCallback, useState } from 'react';
 import { NeutralToneMapping } from 'three';
+import { useGameSounds } from './hooks/useGameSounds';
 import { useKeyboardControls } from './hooks/useKeyboardControls';
 import { Credit } from './ui/Credit';
 import { EndScreen } from './ui/EndScreen';
 import { Hud } from './ui/Hud';
+import { LevelSelect } from './ui/LevelSelect';
 import { TouchControls } from './ui/TouchControls';
 import { Scene } from './world/Scene';
 
@@ -14,6 +16,7 @@ const MAX_DPR = Math.min(window.devicePixelRatio, 2);
 
 export function App() {
   useKeyboardControls();
+  useGameSounds();
   const [loaded, setLoaded] = useState(false);
   const onReady = useCallback(() => setLoaded(true), []);
   const [dpr, setDpr] = useState(MAX_DPR);
@@ -46,6 +49,7 @@ export function App() {
       <Hud />
       <TouchControls />
       <EndScreen />
+      <LevelSelect />
       <Credit />
 
       {!loaded && (

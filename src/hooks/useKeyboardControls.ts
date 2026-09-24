@@ -14,11 +14,26 @@ const MOVE_KEYS: Partial<Record<string, MoveKey>> = {
   ArrowRight: 'right',
 };
 
-/** Feeds the keyboard into the shared input: arrows/WASD to roll, Space to jump, R to restart. */
+/** True while the user types in a text field (the Endless seed box), where keys are just text. */
+function isTyping(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+  );
+}
+
+/**
+ * Feeds the keyboard into the shared input: arrows/WASD to roll, Space to jump. Also R to retry
+ * the course, N for a new Endless course and Esc for the level select screen.
+ */
 export function useKeyboardControls() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return;
+
+      const game = gameStore.getState();
+      // The level select screen keeps the browser's own keys (Space and Enter press buttons).
+      if (game.phase === 'menu') return;
 
       const move = MOVE_KEYS[event.code];
       if (move) {
@@ -28,8 +43,14 @@ export function useKeyboardControls() {
         // Also stops Space from scrolling or pressing a focused button.
         event.preventDefault();
         if (!event.repeat) input.pressJump(performance.now());
-      } else if (event.code === 'KeyR' && !event.repeat) {
-        gameStore.getState().restart();
+      } else if (event.repeat) {
+        return;
+      } else if (event.code === 'KeyR') {
+        game.restart();
+      } else if (event.code === 'KeyN' && game.mode === 'endless') {
+        game.playEndless();
+      } else if (event.code === 'Escape') {
+        game.quit();
       }
     };
 

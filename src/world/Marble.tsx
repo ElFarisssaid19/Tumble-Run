@@ -7,11 +7,12 @@ import {
 } from '@react-three/rapier';
 import { useEffect, useRef, type Ref } from 'react';
 import { BufferAttribute, Color, IcosahedronGeometry, MeshStandardMaterial, type Mesh } from 'three';
+import { START_SPAWN, spawnPoint, type SpawnPoint } from '../game/checkpoints';
 import { FALL_LIMIT_Y } from '../game/config';
 import { input } from '../game/input';
 import { createRng } from '../game/rng';
 import { gameStore } from '../game/store';
-import { MARBLE_NAME, MARBLE_RADIUS, START_POSITION } from './layout';
+import { MARBLE_NAME, MARBLE_RADIUS } from './layout';
 import { palette } from './palette';
 
 /** Handling. Accelerations are in m/s² so they don't depend on the marble's mass. */
@@ -41,8 +42,8 @@ const marbleMaterial = new MeshStandardMaterial({
   metalness: 0.1,
 });
 
-function respawn(body: RapierRigidBody) {
-  body.setTranslation(START_POSITION, true);
+function respawn(body: RapierRigidBody, at: SpawnPoint) {
+  body.setTranslation(at, true);
   body.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
   body.setLinvel(ZERO, true);
   body.setAngvel(ZERO, true);
@@ -53,11 +54,11 @@ export function Marble({ meshRef }: { meshRef?: Ref<Mesh> }) {
   const body = useRef<RapierRigidBody>(null);
   const { world, rapier } = useRapier();
 
-  // Every restart puts the marble back on the start block.
+  // Every new run (restart, new level or seed, back to the menu) starts from the start block.
   useEffect(
     () =>
       gameStore.subscribe((state, previous) => {
-        if (state.run !== previous.run && body.current) respawn(body.current);
+        if (state.run !== previous.run && body.current) respawn(body.current, START_SPAWN);
       }),
     [],
   );
@@ -66,18 +67,25 @@ export function Marble({ meshRef }: { meshRef?: Ref<Mesh> }) {
     const marble = body.current;
     if (!marble) return;
 
+    const game = gameStore.getState();
     const position = marble.translation();
     if (position.y < FALL_LIMIT_Y) {
-      respawn(marble);
-      gameStore.getState().fall();
+      respawn(marble, spawnPoint(game.course, game.checkpoint));
+      game.fall();
       return;
     }
 
-    const game = gameStore.getState();
-    if (game.phase === 'ended') return;
-
     const now = performance.now();
-    if (game.phase === 'ready' && input.isActive()) game.start(now);
+    if (game.phase !== 'ready' && game.phase !== 'playing') {
+      // On the menu or the end screen the marble takes no input; drop jump presses made there
+      // so they can't start the next run on their own.
+      input.takeJump(now);
+      return;
+    }
+    if (game.phase === 'ready') {
+      if (!input.isActive()) return;
+      game.start(now);
+    }
 
     const groundHit = world.castRay(
       new rapier.Ray(position, DOWN),
@@ -110,7 +118,7 @@ export function Marble({ meshRef }: { meshRef?: Ref<Mesh> }) {
       ref={body}
       name={MARBLE_NAME}
       colliders={false}
-      position={[START_POSITION.x, START_POSITION.y, START_POSITION.z]}
+      position={[START_SPAWN.x, START_SPAWN.y, START_SPAWN.z]}
       linearDamping={0.6}
       angularDamping={0.8}
       canSleep={false}

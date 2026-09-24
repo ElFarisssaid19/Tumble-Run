@@ -2,8 +2,9 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  // Served from https://<user>.github.io/tumble-run/ on GitHub Pages.
-  base: '/tumble-run/',
+  // Served from https://<user>.github.io/Tumble-Run/ on GitHub Pages (the repo name; the path is
+  // case-sensitive). Vite prefixes every built asset URL, including index.html's, with it.
+  base: '/Tumble-Run/',
   plugins: [react()],
   build: {
     // Rapier ships its physics engine as WebAssembly inlined into its JS module,

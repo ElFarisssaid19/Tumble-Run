@@ -12,7 +12,6 @@ export const END_WALL_HEIGHT = 1.4;
 
 export const MARBLE_RADIUS = 0.3;
 export const MARBLE_NAME = 'marble';
-export const START_POSITION = { x: 0, y: 0.6, z: 0.8 } as const;
 
 /** Distance from the finish block's centre to its finish line (towards the start). */
 export const FINISH_LINE_OFFSET = 1;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BLOCK_SIZE, OBSTACLE_COUNT, OBSTACLE_SPEED_RANGE } from './config';
+import { BLOCK_SIZE, CHECKPOINT_EVERY, OBSTACLE_COUNT, OBSTACLE_SPEED_RANGE } from './config';
 import { blockZ, generateCourse, type CourseBlock, type ObstacleSpec } from './course';
 
 const KINDS = ['spinner', 'limbo', 'sweeper'] as const;
@@ -9,14 +9,17 @@ function obstaclesOf<K extends string>(blocks: CourseBlock<K>[]): ObstacleSpec<K
 }
 
 describe('generateCourse', () => {
-  it('lays out start, obstacles and finish in a line', () => {
+  it('lays out start, obstacles, checkpoints and finish in a line', () => {
     const course = generateCourse({ seed: 1, kinds: KINDS });
     const types = course.blocks.map((block) => block.type);
+    // A checkpoint follows every CHECKPOINT_EVERY obstacles, except after the last one.
+    const checkpointCount = Math.floor((OBSTACLE_COUNT - 1) / CHECKPOINT_EVERY);
 
     expect(types[0]).toBe('start');
     expect(types.at(-1)).toBe('finish');
     expect(types.filter((type) => type === 'obstacle')).toHaveLength(OBSTACLE_COUNT);
-    expect(course.length).toBe((OBSTACLE_COUNT + 2) * BLOCK_SIZE);
+    expect(types.filter((type) => type === 'checkpoint')).toHaveLength(checkpointCount);
+    expect(course.length).toBe((OBSTACLE_COUNT + checkpointCount + 2) * BLOCK_SIZE);
     course.blocks.forEach((block, i) => {
       expect(block.index).toBe(i);
       expect(block.z).toBe(blockZ(i));

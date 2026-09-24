@@ -1,5 +1,6 @@
 import { useRef, type PointerEvent } from 'react';
 import { input } from '../game/input';
+import { useGame } from '../hooks/useGame';
 import { useIsTouch } from '../hooks/useIsTouch';
 
 /** How far (px) the knob travels from the centre at full tilt. */
@@ -7,10 +8,11 @@ const STICK_RANGE = 46;
 /** Ignore tiny thumb wobbles near the centre (fraction of full tilt). */
 const DEAD_ZONE = 0.12;
 
-/** On-screen joystick (bottom left) and jump button (bottom right) for touch screens. */
+/** On-screen joystick (bottom left) and jump button (bottom right), while racing on a touch screen. */
 export function TouchControls() {
   const isTouch = useIsTouch();
-  if (!isTouch) return null;
+  const racing = useGame((state) => state.phase === 'ready' || state.phase === 'playing');
+  if (!isTouch || !racing) return null;
 
   return (
     <div className="touch">
