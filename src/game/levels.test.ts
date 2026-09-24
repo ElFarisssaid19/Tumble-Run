@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { OBSTACLE_KINDS } from './config';
+import { BLOCK_SIZE, OBSTACLE_KINDS } from './config';
 import { generateCourse } from './course';
 import {
   LEVELS,
@@ -24,7 +24,7 @@ describe('LEVELS', () => {
     expect(new Set(LEVELS.map((level) => level.id)).size).toBe(5);
   });
 
-  it('gets harder level by level: longer, faster, with slower star times', () => {
+  it('gets harder level by level: longer, with more and faster obstacles', () => {
     for (let i = 1; i < LEVELS.length; i++) {
       const [easier, harder] = [LEVELS[i - 1], LEVELS[i]];
       if (!easier || !harder) throw new Error('missing level');
@@ -32,7 +32,6 @@ describe('LEVELS', () => {
       expect(harder.speedRange[0]).toBeGreaterThan(easier.speedRange[0]);
       expect(harder.speedRange[1]).toBeGreaterThan(easier.speedRange[1]);
       expect(levelCourse(harder).length).toBeGreaterThan(levelCourse(easier).length);
-      expect(harder.starTimes.three).toBeGreaterThan(easier.starTimes.three);
     }
   });
 
@@ -46,10 +45,19 @@ describe('LEVELS', () => {
     }
   });
 
-  it('asks for 3 stars faster than 2', () => {
+  it('asks for 3 stars faster than 2, with the 2-star time 1.5× the 3-star one', () => {
     for (const { starTimes } of LEVELS) {
       expect(starTimes.three).toBeGreaterThan(0);
-      expect(starTimes.two).toBeGreaterThan(starTimes.three);
+      expect(starTimes.two).toBe(Math.ceil((starTimes.three * 1.5) / 500) * 500);
+    }
+  });
+
+  it('never asks for less than the marble could roll the course in with no obstacles', () => {
+    // Upper bound on the marble's speed (it tops out near 17 m/s on open track).
+    const MAX_SPEED = 20;
+    for (const level of LEVELS) {
+      const distance = levelCourse(level).length - BLOCK_SIZE;
+      expect(level.starTimes.three / 1000).toBeGreaterThan(distance / MAX_SPEED);
     }
   });
 });

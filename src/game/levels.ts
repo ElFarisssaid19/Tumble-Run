@@ -14,6 +14,19 @@ export interface LevelDef extends CourseSettings<ObstacleKind> {
 /**
  * The hand-made levels, easiest first. Difficulty grows with the length, the obstacle mix and
  * the obstacle speeds; later levels also space their checkpoints further apart.
+ *
+ * Star times are measured, not guessed. The marble alone is no guide: it tops out near 17 m/s,
+ * so even the 51.8 m Grand Tumble could be rolled in about 4.5 s. Waiting for the obstacles is
+ * what sets the pace. So an autopilot played every level 12 times (play-test, 2026-09-24): it
+ * steers through the game's own input, cruises at 5, 6.5 or 8 m/s, reads each obstacle's motion
+ * and jumps, brakes or goes. Its 25th-percentile time is a good run but not its luckiest one:
+ * - three = that time × 1.2 (a person reacts later and steers less precisely than the
+ *   autopilot), rounded up to the next half second. The autopilot's own median run makes
+ *   3 stars on four of the five levels.
+ * - two = 1.5 × three, rounded up: a run with a fall or two, or with long waits.
+ * Change a level's layout or speeds and these need measuring again. The comments give each
+ * level's distance from spawn to finish line and the autopilot's best / 25th percentile /
+ * median times.
  */
 export const LEVELS = [
   {
@@ -25,7 +38,8 @@ export const LEVELS = [
     speedRange: [0.6, 0.8],
     checkpointEvery: 2,
     coinCount: 3,
-    starTimes: { three: 9_000, two: 14_000 },
+    // 23.8 m · autopilot 7.9 / 11.0 / 12.6 s
+    starTimes: { three: 13_500, two: 20_500 },
   },
   {
     id: 'spin-cycle',
@@ -36,7 +50,8 @@ export const LEVELS = [
     speedRange: [0.7, 0.95],
     checkpointEvery: 3,
     coinCount: 3,
-    starTimes: { three: 10_500, two: 16_000 },
+    // 27.8 m · autopilot 6.9 / 10.2 / 11.0 s
+    starTimes: { three: 12_500, two: 19_000 },
   },
   {
     id: 'crosswind',
@@ -47,7 +62,8 @@ export const LEVELS = [
     speedRange: [0.8, 1.1],
     checkpointEvery: 3,
     coinCount: 4,
-    starTimes: { three: 12_500, two: 19_000 },
+    // 31.8 m · autopilot 11.4 / 13.0 / 14.5 s
+    starTimes: { three: 16_000, two: 24_000 },
   },
   {
     id: 'gauntlet',
@@ -58,7 +74,8 @@ export const LEVELS = [
     speedRange: [0.95, 1.3],
     checkpointEvery: 3,
     coinCount: 4,
-    starTimes: { three: 16_500, two: 25_000 },
+    // 43.8 m · autopilot 17.6 / 18.5 / 20.5 s
+    starTimes: { three: 22_500, two: 34_000 },
   },
   {
     id: 'grand-tumble',
@@ -69,7 +86,8 @@ export const LEVELS = [
     speedRange: [1.1, 1.55],
     checkpointEvery: 4,
     coinCount: 5,
-    starTimes: { three: 21_000, two: 32_000 },
+    // 51.8 m · autopilot 16.3 / 19.3 / 23.8 s
+    starTimes: { three: 23_500, two: 35_500 },
   },
 ] as const satisfies readonly LevelDef[];
 
