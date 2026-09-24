@@ -5,6 +5,7 @@ import { formatSeed, parseSeed } from '../game/seedCode';
 import { gameStore } from '../game/store';
 import { formatTime } from '../game/timer';
 import { useGame } from '../hooks/useGame';
+import { Credit } from './Credit';
 import { LockIcon, StarRow } from './icons';
 
 const MAX_CODE = formatSeed(0xffffffff);
@@ -46,6 +47,7 @@ export function LevelSelect() {
         </ol>
 
         <EndlessPanel best={records.endless} />
+        <Credit inline />
       </section>
     </div>
   );

@@ -612,7 +612,6 @@ kbd {
 
 .endless {
   display: grid;
-  /* minmax(0, …): the seed input's default width must not stretch the panel on small phones. */
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px 16px;
@@ -649,7 +648,9 @@ kbd {
 }
 
 .seed-input {
+  /* Sized by flex alone: its default width (about 20 characters) would widen the panel. */
   flex: 1;
+  width: 0;
   min-width: 0;
   padding: 9px 14px;
   border: 2px solid var(--lilac);
@@ -773,6 +774,12 @@ kbd {
   white-space: nowrap;
   opacity: 0.85;
   pointer-events: none;
+}
+
+.credit--inline {
+  position: static;
+  transform: none;
+  text-align: center;
 }
 
 .loading {
