@@ -6,7 +6,13 @@ import {
   type RapierRigidBody,
 } from '@react-three/rapier';
 import { useEffect, useRef, type Ref } from 'react';
-import { BufferAttribute, Color, IcosahedronGeometry, MeshStandardMaterial, type Mesh } from 'three';
+import {
+  BufferAttribute,
+  Color,
+  IcosahedronGeometry,
+  MeshStandardMaterial,
+  type Mesh,
+} from 'three';
 import { START_SPAWN, spawnPoint, type SpawnPoint } from '../game/checkpoints';
 import { FALL_LIMIT_Y } from '../game/config';
 import { input } from '../game/input';

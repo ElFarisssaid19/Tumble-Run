@@ -334,6 +334,57 @@ describe('game store: checkpoints and falls', () => {
   });
 });
 
+describe('game store: bridges', () => {
+  /** A store racing Grand Tumble (every level open), and its course. */
+  function racingGrandTumble() {
+    const storage = memoryStorage();
+    saveRecords(
+      storage,
+      LEVELS.reduce(
+        (records, level) => recordLevelRun(records, level.id, 90_000, 1).records,
+        EMPTY_RECORDS,
+      ),
+    );
+    const store = racing(storage, 'grand-tumble');
+    return { store, course: store.getState().course };
+  }
+
+  it('respawns at the last checkpoint after falling off a bridge', () => {
+    const { store, course } = racingGrandTumble();
+    // A bridge with at least one checkpoint before it.
+    const bridge = course.blocks.find(
+      (block) => block.type === 'bridge' && block.index > (course.checkpoints[0]?.blockIndex ?? 0),
+    );
+    if (!bridge) throw new Error('Grand Tumble should have a bridge after a checkpoint');
+    const reached = course.checkpoints.filter((cp) => cp.blockIndex < bridge.index);
+
+    // Roll past each checkpoint up to the bridge, then fall off it.
+    reached.forEach((cp) => store.getState().reachCheckpoint(cp.id));
+    store.getState().fall();
+
+    const state = store.getState();
+    const last = reached.at(-1);
+    expect(state.falls).toBe(1);
+    expect(state.checkpoint).toBe(last?.id);
+    expect(spawnPoint(state.course, state.checkpoint).z).toBe((last?.z ?? NaN) + SPAWN_OFFSET_Z);
+    // Behind the bridge, on solid ground.
+    expect(spawnPoint(state.course, state.checkpoint).z).toBeGreaterThan(bridge.z);
+  });
+
+  it('respawns at the start after falling off a bridge before any checkpoint', () => {
+    const storage = memoryStorage();
+    const store = racing(storage, 'warm-up');
+    const { course } = store.getState();
+    const bridge = course.blocks.find((block) => block.type === 'bridge');
+    const firstCheckpoint = course.checkpoints[0];
+    if (!bridge || !firstCheckpoint) throw new Error('Warm-Up has a bridge and checkpoints');
+    expect(bridge.index).toBeLessThan(firstCheckpoint.blockIndex);
+
+    store.getState().fall();
+    expect(spawnPoint(course, store.getState().checkpoint)).toEqual(START_SPAWN);
+  });
+});
+
 describe('game store: coins', () => {
   it('collects each coin once', () => {
     const store = racing();

@@ -1,8 +1,13 @@
 import type { ComponentType } from 'react';
 import type { ObstacleKind } from '../../game/config';
+import { Bumpers } from './Bumpers';
+import { Hammer } from './Hammer';
 import { Limbo } from './Limbo';
+import { Pistons } from './Pistons';
+import { Ramp } from './Ramp';
 import { Spinner } from './Spinner';
 import { Sweeper } from './Sweeper';
+import { Turntable } from './Turntable';
 import type { ObstacleProps } from './types';
 
 /**
@@ -14,4 +19,9 @@ export const obstacleRegistry = {
   spinner: Spinner,
   limbo: Limbo,
   sweeper: Sweeper,
+  bumpers: Bumpers,
+  turntable: Turntable,
+  pistons: Pistons,
+  hammer: Hammer,
+  ramp: Ramp,
 } satisfies Record<ObstacleKind, ComponentType<ObstacleProps>>;

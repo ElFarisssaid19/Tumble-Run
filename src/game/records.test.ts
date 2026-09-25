@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { isLevelUnlocked } from './levels';
 import {
   EMPTY_RECORDS,
+  LEGACY_RECORDS_KEYS,
   RECORDS_KEY,
   browserStorage,
   compareBest,
@@ -163,13 +164,54 @@ describe('loadRecords / saveRecords', () => {
   });
 });
 
+describe('records version', () => {
+  const OLD_KEY = 'tumble-run/records/v1';
+  const oldRecords = JSON.stringify({
+    levels: { 'warm-up': { bestTimeMs: 8_000, bestStars: 3 } },
+    endless: { '1PKQ3XE': 21_000 },
+  });
+
+  it('keeps records under a new key now that the courses changed', () => {
+    expect(RECORDS_KEY).toBe('tumble-run/records/v2');
+    expect(LEGACY_RECORDS_KEYS).toContain(OLD_KEY);
+    expect(LEGACY_RECORDS_KEYS).not.toContain(RECORDS_KEY);
+  });
+
+  it('ignores records from the old courses and deletes them', () => {
+    const storage = memoryStorage({ [OLD_KEY]: oldRecords });
+    expect(loadRecords(storage)).toEqual(EMPTY_RECORDS);
+    expect(storage.data.has(OLD_KEY)).toBe(false);
+    // No level counts as beaten any more: only Warm-Up is open.
+    expect(isLevelUnlocked('spin-cycle', loadRecords(storage))).toBe(false);
+  });
+
+  it('keeps current records while dropping old ones', () => {
+    const current = recordLevelRun(EMPTY_RECORDS, 'warm-up', 19_000, 2).records;
+    const storage = memoryStorage({ [OLD_KEY]: oldRecords });
+    saveRecords(storage, current);
+    expect(loadRecords(storage)).toEqual(current);
+    expect([...storage.data.keys()]).toEqual([RECORDS_KEY]);
+  });
+
+  it('copes with storage that cannot delete, or refuses to', () => {
+    const storage = memoryStorage({ [OLD_KEY]: oldRecords });
+    const withoutRemove = {
+      getItem: (key: string) => storage.getItem(key),
+      setItem: (key: string, value: string) => storage.setItem(key, value),
+    };
+    expect(loadRecords(withoutRemove)).toEqual(EMPTY_RECORDS);
+    expect(() => loadRecords(brokenStorage)).not.toThrow();
+    expect(loadRecords(brokenStorage)).toEqual(EMPTY_RECORDS);
+  });
+});
+
 describe('browserStorage', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
   it('returns localStorage when it works', () => {
-    const storage = Object.assign(memoryStorage(), { removeItem: () => undefined });
+    const storage = memoryStorage();
     vi.stubGlobal('localStorage', storage);
     expect(browserStorage()).toBe(storage);
   });
@@ -180,7 +222,7 @@ describe('browserStorage', () => {
   });
 
   it('returns null when localStorage refuses writes', () => {
-    vi.stubGlobal('localStorage', { ...brokenStorage, removeItem: () => undefined });
+    vi.stubGlobal('localStorage', brokenStorage);
     expect(browserStorage()).toBeNull();
   });
 });

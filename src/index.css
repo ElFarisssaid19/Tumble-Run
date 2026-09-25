@@ -424,7 +424,9 @@ kbd {
   color: #fff;
   font-size: 19px;
   font-weight: 600;
-  transition: transform 0.08s, box-shadow 0.08s;
+  transition:
+    transform 0.08s,
+    box-shadow 0.08s;
 }
 
 .button kbd {
@@ -552,7 +554,9 @@ kbd {
   background: var(--paper);
   box-shadow: var(--shadow);
   text-align: left;
-  transition: transform 0.12s, border-color 0.2s;
+  transition:
+    transform 0.12s,
+    border-color 0.2s;
 }
 
 .level:hover:not(:disabled) {
@@ -750,7 +754,9 @@ kbd {
   border: 3px solid #fff;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 5px 0 var(--accent-deep), var(--shadow);
+  box-shadow:
+    0 5px 0 var(--accent-deep),
+    var(--shadow);
   color: #fff;
   font-size: 18px;
   font-weight: 600;
@@ -758,7 +764,9 @@ kbd {
 
 .touch-jump:active {
   transform: translateY(3px);
-  box-shadow: 0 2px 0 var(--accent-deep), var(--shadow);
+  box-shadow:
+    0 2px 0 var(--accent-deep),
+    var(--shadow);
 }
 
 /* Credit & loading */

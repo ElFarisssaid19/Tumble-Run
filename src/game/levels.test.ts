@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BLOCK_SIZE, OBSTACLE_KINDS } from './config';
+import { BLOCK_SIZE, BRIDGE_KINDS, OBSTACLE_KINDS, THEMES } from './config';
 import { generateCourse } from './course';
 import {
   LEVELS,
@@ -24,24 +24,87 @@ describe('LEVELS', () => {
     expect(new Set(LEVELS.map((level) => level.id)).size).toBe(5);
   });
 
-  it('gets harder level by level: longer, with more and faster obstacles', () => {
+  it('gets harder level by level: longer, more obstacles and bridges, sparser checkpoints', () => {
     for (let i = 1; i < LEVELS.length; i++) {
       const [easier, harder] = [LEVELS[i - 1], LEVELS[i]];
       if (!easier || !harder) throw new Error('missing level');
       expect(harder.obstacleCount).toBeGreaterThan(easier.obstacleCount);
-      expect(harder.speedRange[0]).toBeGreaterThan(easier.speedRange[0]);
-      expect(harder.speedRange[1]).toBeGreaterThan(easier.speedRange[1]);
+      expect(harder.bridgeCount).toBeGreaterThanOrEqual(easier.bridgeCount);
+      expect(harder.checkpointEvery).toBeGreaterThanOrEqual(easier.checkpointEvery);
       expect(levelCourse(harder).length).toBeGreaterThan(levelCourse(easier).length);
     }
   });
 
-  it('gives every level 3 to 5 coins and at least one checkpoint', () => {
+  it('raises obstacle speeds only gently, and never uses slow obstacles as the easy setting', () => {
+    for (let i = 0; i < LEVELS.length; i++) {
+      const [min, max] = LEVELS[i]?.speedRange ?? [0, 0];
+      // Slow obstacles only make players wait for an opening.
+      expect(min).toBeGreaterThanOrEqual(0.9);
+      expect(max).toBeLessThanOrEqual(1.4);
+      const previous = LEVELS[i - 1]?.speedRange;
+      if (previous) {
+        expect(min).toBeGreaterThan(previous[0]);
+        expect(min - previous[0]).toBeLessThanOrEqual(0.1);
+      }
+    }
+  });
+
+  it('is about twice as long as before, with Warm-Up still short for a first try', () => {
+    // Phase 2 lengths (m): Warm-Up, Spin Cycle, Crosswind, Gauntlet, Grand Tumble.
+    const before = [28, 32, 36, 48, 56];
+    const lengths = LEVELS.map((level) => levelCourse(level).length);
+    expect(lengths).toEqual([44, 64, 76, 96, 112]);
+    expect(lengths[0]).toBeLessThanOrEqual(48);
+    lengths.slice(1).forEach((length, i) => {
+      expect(length / (before[i + 1] ?? 1)).toBeGreaterThanOrEqual(1.9);
+    });
+  });
+
+  it('brings in new obstacle and bridge kinds a level or two at a time', () => {
+    const seen = new Set<string>();
+    const news = LEVELS.map((level) => {
+      const kinds = [...level.kinds, ...level.bridgeKinds];
+      const fresh = kinds.filter((kind) => !seen.has(kind));
+      kinds.forEach((kind) => seen.add(kind));
+      return fresh;
+    });
+    // Warm-Up starts with a few; each next level adds one to three; the last adds nothing new.
+    expect(news[0]?.length).toBeLessThanOrEqual(4);
+    news.slice(1, -1).forEach((fresh) => {
+      expect(fresh.length).toBeGreaterThanOrEqual(1);
+      expect(fresh.length).toBeLessThanOrEqual(3);
+    });
+    const finale = LEVELS.at(-1);
+    expect(new Set(finale?.kinds)).toEqual(new Set(OBSTACLE_KINDS));
+    expect(new Set(finale?.bridgeKinds)).toEqual(new Set(BRIDGE_KINDS));
+  });
+
+  it('scales coins and checkpoints with the length', () => {
     for (const level of LEVELS) {
       const course = levelCourse(level);
       expect(course.coins.length).toBe(level.coinCount);
-      expect(course.coins.length).toBeGreaterThanOrEqual(3);
-      expect(course.coins.length).toBeLessThanOrEqual(5);
-      expect(course.checkpoints.length).toBeGreaterThanOrEqual(1);
+      // About one coin every 11 m, and a checkpoint at least every ~30 m.
+      const perHundred = (course.coins.length / course.length) * 100;
+      expect(perHundred).toBeGreaterThanOrEqual(8);
+      expect(perHundred).toBeLessThanOrEqual(11);
+      expect(course.checkpoints.length).toBeGreaterThanOrEqual(2);
+      expect(course.length / (course.checkpoints.length + 1)).toBeLessThanOrEqual(30);
+    }
+  });
+
+  it('sends every level through two or more scenery zones', () => {
+    for (const level of LEVELS) {
+      const { zones } = levelCourse(level);
+      expect(zones.map((zone) => zone.theme)).toEqual(level.themes);
+      expect(zones.length).toBeGreaterThanOrEqual(2);
+    }
+    expect(LEVELS.at(-1)?.themes).toEqual(THEMES);
+  });
+
+  it('asks for more time for 3 stars level by level, as the levels get harder', () => {
+    for (let i = 1; i < LEVELS.length; i++) {
+      const [easier, harder] = [LEVELS[i - 1], LEVELS[i]];
+      expect(harder?.starTimes.three).toBeGreaterThan(easier?.starTimes.three ?? Infinity);
     }
   });
 
@@ -152,12 +215,26 @@ describe('endlessCourse', () => {
     expect(layouts.size).toBe(30);
   });
 
-  it('uses the default generator settings and every obstacle kind', () => {
+  it('uses the default generator settings, every obstacle kind and all four zones', () => {
     const course = endlessCourse(7);
-    expect(course).toEqual(generateCourse({ seed: 7, kinds: OBSTACLE_KINDS }));
+    expect(course).toEqual(
+      generateCourse({ seed: 7, kinds: OBSTACLE_KINDS, themes: course.zones.map((z) => z.theme) }),
+    );
     const kinds = new Set(
       course.blocks.flatMap((block) => (block.type === 'obstacle' ? [block.obstacle.kind] : [])),
     );
     expect(kinds).toEqual(new Set(OBSTACLE_KINDS));
+    expect(new Set(course.zones.map((zone) => zone.theme))).toEqual(new Set(THEMES));
+  });
+
+  it('lets the seed pick the first zone, then goes round the themes in order', () => {
+    for (let seed = 0; seed < 8; seed++) {
+      const themes = endlessCourse(seed).zones.map((zone) => zone.theme);
+      expect(themes[0]).toBe(THEMES[seed % THEMES.length]);
+      themes.slice(1).forEach((theme, i) => {
+        const previous = THEMES.indexOf(themes[i] ?? 'meadow');
+        expect(theme).toBe(THEMES[(previous + 1) % THEMES.length]);
+      });
+    }
   });
 });

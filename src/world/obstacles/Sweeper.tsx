@@ -35,6 +35,7 @@ export function Sweeper({ z, speed, phase, direction }: ObstacleProps) {
       <RigidBody
         ref={body}
         type="kinematicPosition"
+        name="sweeper"
         colliders={false}
         position={[barX(phase, direction), BAR.height / 2, z]}
       >
@@ -43,7 +44,12 @@ export function Sweeper({ z, speed, phase, direction }: ObstacleProps) {
       </RigidBody>
 
       {/* Painted track showing where the bar slides. */}
-      <mesh geometry={railGeometry} material={materials.obstacleHub} position={[0, 0.02, z]} receiveShadow />
+      <mesh
+        geometry={railGeometry}
+        material={materials.obstacleHub}
+        position={[0, 0.02, z]}
+        receiveShadow
+      />
     </>
   );
 }

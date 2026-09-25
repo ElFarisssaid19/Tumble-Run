@@ -8,6 +8,9 @@ export function memoryStorage(initial: Record<string, string> = {}) {
     setItem: (key, value) => {
       data.set(key, value);
     },
+    removeItem: (key) => {
+      data.delete(key);
+    },
   };
   return Object.assign(storage, { data });
 }
@@ -19,5 +22,8 @@ export const brokenStorage: KeyValueStorage = {
   },
   setItem: () => {
     throw new Error('QuotaExceededError');
+  },
+  removeItem: () => {
+    throw new Error('SecurityError: storage is disabled');
   },
 };

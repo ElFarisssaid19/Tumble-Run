@@ -1,4 +1,9 @@
-import { CuboidCollider, CylinderCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier';
+import {
+  CuboidCollider,
+  CylinderCollider,
+  RigidBody,
+  type RapierRigidBody,
+} from '@react-three/rapier';
 import { useRef } from 'react';
 import { BoxGeometry, CylinderGeometry, Quaternion, Vector3 } from 'three';
 import { materials } from '../materials';
@@ -29,12 +34,16 @@ export function Spinner({ z, speed, phase, direction }: ObstacleProps) {
     <RigidBody
       ref={body}
       type="kinematicPosition"
+      name="spinner"
       colliders={false}
       position={[0, HEIGHT, z]}
       rotation={[0, phase, 0]}
     >
       <CuboidCollider args={[BAR.length / 2, BAR.height / 2, BAR.depth / 2]} restitution={0.5} />
-      <CylinderCollider args={[HUB.height / 2, HUB.radius]} position={[0, HUB.height / 2 - HEIGHT, 0]} />
+      <CylinderCollider
+        args={[HUB.height / 2, HUB.radius]}
+        position={[0, HUB.height / 2 - HEIGHT, 0]}
+      />
       <mesh geometry={barGeometry} material={materials.obstacle} castShadow receiveShadow />
       <mesh
         geometry={hubGeometry}

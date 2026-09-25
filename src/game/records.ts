@@ -74,12 +74,19 @@ export function recordEndlessRun(
 
 // Persistence.
 
-export const RECORDS_KEY = 'tumble-run/records/v1';
+/**
+ * Bump the version whenever the courses change: a best time only means something on the course
+ * it was set on. Older keys are listed in LEGACY_RECORDS_KEYS and deleted on load.
+ * v1: phase 2 courses. v2: longer courses with bridges and new obstacles (phase 3).
+ */
+export const RECORDS_KEY = 'tumble-run/records/v2';
+export const LEGACY_RECORDS_KEYS: readonly string[] = ['tumble-run/records/v1'];
 
 /** The part of the Web Storage API the game needs (localStorage in the browser, a fake in tests). */
 export interface KeyValueStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  removeItem?(key: string): void;
 }
 
 /** Reads saved records, dropping anything malformed instead of failing. */
@@ -111,11 +118,24 @@ function entriesOf(value: unknown): [string, unknown][] {
   return isObject(value) ? Object.entries(value) : [];
 }
 
+/** Reads the current records and deletes those saved for older courses. */
 export function loadRecords(storage: KeyValueStorage | null): Records {
+  dropLegacyRecords(storage);
   try {
     return parseRecords(storage?.getItem(RECORDS_KEY) ?? null);
   } catch {
     return EMPTY_RECORDS;
+  }
+}
+
+/** Old records describe courses that no longer exist: remove them (best effort, never throws). */
+function dropLegacyRecords(storage: KeyValueStorage | null): void {
+  for (const key of LEGACY_RECORDS_KEYS) {
+    try {
+      storage?.removeItem?.(key);
+    } catch {
+      // Blocked storage: the old key just stays; it is never read.
+    }
   }
 }
 

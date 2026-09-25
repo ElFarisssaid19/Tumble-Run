@@ -51,14 +51,26 @@ describe('spawnPoint', () => {
 
 describe('checkpoint placement', () => {
   it('puts a checkpoint block after every N obstacles, but not after the last one', () => {
-    const course = generateCourse({ seed: 8, kinds: KINDS, obstacleCount: 9, checkpointEvery: 3 });
+    const course = generateCourse({
+      seed: 8,
+      kinds: KINDS,
+      obstacleCount: 9,
+      bridgeCount: 0,
+      checkpointEvery: 3,
+    });
     const types = course.blocks.map((block) => block.type[0]).join('');
     // s = start, o = obstacle, c = checkpoint, f = finish
     expect(types).toBe('sooocooocooof');
   });
 
   it('numbers checkpoints in order and keeps them in step with their blocks', () => {
-    const course = generateCourse({ seed: 8, kinds: KINDS, obstacleCount: 10, checkpointEvery: 2 });
+    const course = generateCourse({
+      seed: 8,
+      kinds: KINDS,
+      obstacleCount: 10,
+      bridgeCount: 0,
+      checkpointEvery: 2,
+    });
     expect(course.checkpoints.map((checkpoint) => checkpoint.id)).toEqual([0, 1, 2, 3]);
     for (const checkpoint of course.checkpoints) {
       const block = course.blocks[checkpoint.blockIndex];

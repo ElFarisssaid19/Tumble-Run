@@ -44,7 +44,15 @@ export default defineConfig([
           ],
           patterns: [
             {
-              group: ['react', 'react/*', 'react-dom', 'react-dom/*', 'three', 'three/*', '@react-three/*'],
+              group: [
+                'react',
+                'react/*',
+                'react-dom',
+                'react-dom/*',
+                'three',
+                'three/*',
+                '@react-three/*',
+              ],
               message: 'src/game must stay free of React and three.js so it can be unit-tested.',
             },
           ],

@@ -6,29 +6,26 @@ import { Course } from './Course';
 import { FollowCamera } from './FollowCamera';
 import { Lights } from './Lights';
 import { Marble } from './Marble';
-import { palette } from './palette';
 import { Scenery } from './Scenery';
 
 /** Everything inside the canvas. `onReady` fires once physics has loaded and the world is up. */
 export function Scene({ onReady }: { onReady?: () => void }) {
   const marble = useRef<Mesh>(null);
-  const courseLength = useGame((state) => state.course.length);
+  const course = useGame((state) => state.course);
 
   useEffect(() => onReady?.(), [onReady]);
 
   return (
     <>
-      <color attach="background" args={[palette.sky]} />
-      <fog attach="fog" args={[palette.sky, 14, 44]} />
-
       <Physics>
         <Course />
         <Marble meshRef={marble} />
       </Physics>
 
+      {/* Sky, fog and lights: blended from zone to zone as the marble rolls. */}
       <Lights target={marble} />
       <FollowCamera target={marble} />
-      <Scenery length={courseLength} />
+      <Scenery course={course} />
     </>
   );
 }

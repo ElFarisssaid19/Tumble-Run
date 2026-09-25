@@ -40,6 +40,7 @@ export function Limbo({ z, speed, phase }: ObstacleProps) {
       <RigidBody
         ref={body}
         type="kinematicPosition"
+        name="limbo"
         colliders={false}
         position={[0, barHeight(phase), z]}
       >

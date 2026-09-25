@@ -2,7 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { collectCoin, hasAllCoins } from './coins';
 import { generateCourse } from './course';
 
-const KINDS = ['spinner', 'limbo', 'sweeper'] as const;
+const KINDS = [
+  'spinner',
+  'limbo',
+  'sweeper',
+  'bumpers',
+  'turntable',
+  'pistons',
+  'hammer',
+  'ramp',
+] as const;
+/** Obstacles that fill the middle of their block: their coins sit at the block's edge. */
+const EDGE_KINDS: readonly string[] = ['bumpers', 'pistons', 'turntable'];
 
 describe('collectCoin', () => {
   it('adds a new coin without changing the input', () => {
@@ -52,16 +63,37 @@ describe('coin placement', () => {
     }
   });
 
-  it('keeps coins on obstacle or checkpoint blocks, near the racing line', () => {
-    for (let seed = 0; seed < 100; seed++) {
-      const course = generateCourse({ seed, kinds: KINDS });
+  it('keeps coins on the racing line, clear of each obstacle', () => {
+    for (let seed = 0; seed < 150; seed++) {
+      const course = generateCourse({ seed, kinds: KINDS, coinCount: 12 });
       for (const coin of course.coins) {
         const block = course.blocks[coin.blockIndex];
-        expect(['obstacle', 'checkpoint']).toContain(block?.type);
-        expect(Math.abs(coin.x)).toBeLessThanOrEqual(1.2);
-        const offset = Math.abs(coin.z - (block?.z ?? Number.NaN));
-        expect(offset).toBeGreaterThanOrEqual(1);
-        expect(offset).toBeLessThanOrEqual(1.4);
+        if (!block) throw new Error('coin on a missing block');
+        const offset = Math.abs(coin.z - block.z);
+        expect(['obstacle', 'checkpoint', 'bridge']).toContain(block.type);
+        if (block.type === 'bridge') {
+          // On the middle of the deck.
+          expect(coin.x).toBe(0);
+          expect(offset).toBeGreaterThanOrEqual(0.6);
+          expect(offset).toBeLessThanOrEqual(1.4);
+        } else if (block.type === 'obstacle' && EDGE_KINDS.includes(block.obstacle.kind)) {
+          expect(offset).toBeGreaterThanOrEqual(1.55);
+          expect(offset).toBeLessThanOrEqual(1.85);
+        } else {
+          expect(Math.abs(coin.x)).toBeLessThanOrEqual(1.2);
+          expect(offset).toBeGreaterThanOrEqual(1);
+          expect(offset).toBeLessThanOrEqual(1.4);
+        }
+      }
+    }
+  });
+
+  it("never puts a coin over a ramp's gap", () => {
+    for (let seed = 0; seed < 150; seed++) {
+      const course = generateCourse({ seed, kinds: KINDS, coinCount: 20 });
+      for (const coin of course.coins) {
+        const block = course.blocks[coin.blockIndex];
+        expect(block?.type === 'obstacle' && block.obstacle.kind === 'ramp').toBe(false);
       }
     }
   });
@@ -74,7 +106,13 @@ describe('coin placement', () => {
   });
 
   it('caps the coins at one per eligible block', () => {
-    const course = generateCourse({ seed: 2, kinds: KINDS, obstacleCount: 2, coinCount: 9 });
+    const course = generateCourse({
+      seed: 2,
+      kinds: ['limbo', 'spinner'],
+      obstacleCount: 2,
+      bridgeCount: 0,
+      coinCount: 9,
+    });
     expect(course.coins).toHaveLength(2);
   });
 

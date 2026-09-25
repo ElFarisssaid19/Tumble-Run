@@ -1,10 +1,12 @@
 import { Fragment, createElement } from 'react';
 import { useGame } from '../hooks/useGame';
-import { CheckpointBlock, FinishBlock, ObstacleBlock, StartBlock, TrackColliders } from './Block';
+import { CheckpointBlock, FinishBlock, StartBlock } from './Block';
+import { Bridge } from './Bridge';
 import { Coins } from './Coins';
 import { obstacleRegistry } from './obstacles/registry';
+import { Track } from './Track';
 
-/** Turns the current course (pure data from the store) into blocks, obstacles and coins. */
+/** Turns the current course (pure data from the store) into track, obstacles, bridges and coins. */
 export function Course() {
   const course = useGame((state) => state.course);
   const courseKey = useGame((state) => `${state.levelId ?? 'endless'}:${state.seed}`);
@@ -20,14 +22,15 @@ export function Course() {
         return <CheckpointBlock key={block.index} z={block.z} id={block.checkpoint} />;
       case 'obstacle': {
         const { kind, ...params } = block.obstacle;
-        return (
-          <Fragment key={block.index}>
-            <ObstacleBlock z={block.z} index={block.index} />
-            {/* Keyed by run so every attempt starts the obstacles from the same timing. */}
-            {createElement(obstacleRegistry[kind], { key: run, z: block.z, ...params })}
-          </Fragment>
-        );
+        // Keyed by run so every attempt starts the obstacles from the same timing.
+        return createElement(obstacleRegistry[kind], {
+          key: `${block.index}:${run}`,
+          z: block.z,
+          ...params,
+        });
       }
+      case 'bridge':
+        return <Bridge key={`${block.index}:${run}`} z={block.z} spec={block.bridge} />;
       default: {
         // Fails to compile when a new block type is added without a case above.
         const unhandled: never = block;
@@ -39,7 +42,7 @@ export function Course() {
   return (
     // Keyed by course so a new level or seed rebuilds every collider from scratch.
     <Fragment key={courseKey}>
-      <TrackColliders length={course.length} />
+      <Track course={course} />
       {blocks}
       <Coins coins={course.coins} />
     </Fragment>
